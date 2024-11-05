@@ -40,6 +40,18 @@
     <link rel="stylesheet" href="{{ asset('extensions/simple-datatables/style.css') }}">
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        .label {
+            font-size: 12px;
+            color: #333;
+            font-weight: bold;
+            background-color: rgba(255, 255, 255, 0.7);
+            padding: 2px 5px;
+            border-radius: 3px;
+            text-align: center;
+        }
+    </style>
 </head>
 
 <body class="g-sidenav-show  bg-gray-200">
@@ -111,6 +123,14 @@
                             <i class="material-icons opacity-10">bar_chart</i>
                         </div>
                         <span class="nav-link-text ms-1">Klasterisasi</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-white" href="{{ url('klasterisasi/pemetaan') }}">
+                        <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
+                            <i class="material-icons opacity-10">map</i>
+                        </div>
+                        <span class="nav-link-text ms-1">Pemetaan</span>
                     </a>
                 </li>
             </ul>
@@ -458,6 +478,9 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     @stack('get_kecamatan')
     @stack('proses_klasterisasi')
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    @stack('proses_pemetaan')
 </body>
 
 </html>

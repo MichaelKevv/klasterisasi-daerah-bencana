@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 
 /**
  * Class TbClustering
- * 
+ *
  * @property int $id
  * @property int $id_kotakab
  * @property int $id_kecamatan
@@ -23,7 +23,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property string|null $data_hash
- * 
+ *
  * @property TbKecamatan $tb_kecamatan
  * @property TbKotakab $tb_kotakab
  *
@@ -38,7 +38,7 @@ class TbClustering extends Model
 		'id_kecamatan' => 'int',
 		'frekuensi_kejadian' => 'int',
 		'total_kerusakan' => 'int',
-		'luas_terdampak' => 'int',
+		'luas_terdampak' => 'double',
 		'total_korban' => 'int'
 	];
 

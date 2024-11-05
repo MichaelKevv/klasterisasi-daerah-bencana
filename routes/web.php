@@ -52,6 +52,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('klasterisasi', [KlasterisasiController::class, 'index']);
     Route::post('klasterisasi/proses', [KlasterisasiController::class, 'prosesKlasterisasi'])->name('klasterisasi.proses');
     Route::get('klasterisasi/detail/{id}', [KlasterisasiController::class, 'show'])->name('klasterisasi.detail');
+    Route::get('klasterisasi/pemetaan', [KlasterisasiController::class, 'showMap'])->name('klasterisasi.pemetaan');
 
     // Route::get('export/artikel', [ArtikelController::class, 'export']);
     // Route::get('export/pengguna', [PenggunaController::class, 'export']);
