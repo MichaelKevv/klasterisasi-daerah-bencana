@@ -21,7 +21,7 @@ return new class extends Migration
             $table->foreign('id_kecamatan')->references('id')->on('tb_kecamatan')->onDelete('cascade');
             $table->integer('frekuensi_kejadian');
             $table->integer('total_kerusakan');
-            $table->integer('luas_terdampak');
+            $table->double('luas_terdampak');
             $table->integer('total_korban');
             $table->string('cluster');
             $table->timestamps();

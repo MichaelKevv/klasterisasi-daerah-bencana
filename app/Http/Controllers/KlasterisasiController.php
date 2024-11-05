@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use RealRashid\SweetAlert\Facades\Alert;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 
 class KlasterisasiController extends Controller
 {
@@ -67,7 +69,6 @@ class KlasterisasiController extends Controller
                 tb_kecamatan.nama_kecamatan,
                 SUM(tb_databencana.frekuensi_kejadian) as total_frekuensi,
                 SUM(tb_databencana.total_kerusakan) as total_kerusakan,
-                SUM(tb_databencana.luas_terdampak) as luas_terdampak,
                 SUM(tb_databencana.total_korban) as total_korban
             ')
             ->join('tb_kecamatan', 'tb_databencana.id_kecamatan', '=', 'tb_kecamatan.id')
@@ -87,10 +88,11 @@ class KlasterisasiController extends Controller
                 'nama_kecamatan' => $item->nama_kecamatan,
                 'total_frekuensi' => $item->total_frekuensi,
                 'total_kerusakan' => $item->total_kerusakan,
-                'luas_terdampak' => $item->luas_terdampak,
                 'total_korban' => $item->total_korban,
             ];
         }
+
+
 
         // Fungsi untuk mengecek apakah ada perubahan data
         // Buat hash dari data bencana
@@ -110,7 +112,7 @@ class KlasterisasiController extends Controller
 
         // Step 4: Jalankan algoritma K-Means
         $clusters = $this->kMeans($data, $jumlahCluster);
-        $centroids = $this->initCentroids($data, $jumlahCluster);
+        $centroids = $this->initCentroids($data);
 
         // Step 5: Hapus data lama di tb_clustering jika ada perubahan data
         TbClustering::truncate(); // Hapus semua data di tabel tb_clustering
@@ -130,21 +132,14 @@ class KlasterisasiController extends Controller
 
         // Step 2: Mulai iterasi sampai konvergen
         $iterations = 100; // Batas maksimum iterasi
-        $iterationData = []; // Initialize array to collect iteration data
         for ($i = 0; $i < $iterations; $i++) {
             $clusters = $this->assignClusters($data, $centroids);
 
             // Perbarui centroid
-            $newCentroids = $this->updateCentroids($data, $clusters, $k);
+            $newCentroids = $this->updateCentroids($data, $clusters['clusters'], $k);
 
             // Simpan data iterasi
-            $iterationData[] = [
-                'iteration' => $i + 1,
-                'centroids' => $this->labelCentroids($centroids), // Tambahkan label ke centroids
-                'clusters' => $clusters
-            ];
-
-            $this->insertIterationData($i + 1, $this->labelCentroids($centroids), $clusters);
+            $this->insertIterationData($i + 1, $this->labelCentroids($centroids), $clusters['clusters'], $clusters['euclidean_distances']);
 
             // Cek konvergensi
             if ($centroids == $newCentroids) {
@@ -152,10 +147,10 @@ class KlasterisasiController extends Controller
             }
             $centroids = $newCentroids;
         }
-        ksort($clusters);
+        ksort($clusters['clusters']);
 
         // Pastikan cluster selalu berurutan dengan label C1, C2, C3
-        return $clusters;
+        return $clusters['clusters'];
     }
 
     // Fungsi untuk inisialisasi centroid secara acak
@@ -211,7 +206,6 @@ class KlasterisasiController extends Controller
                     'id_kecamatan' => $data['id_kecamatan'],
                     'frekuensi_kejadian' => $data['total_frekuensi'],
                     'total_kerusakan' => $data['total_kerusakan'],
-                    'luas_terdampak' => $data['luas_terdampak'],
                     'total_korban' => $data['total_korban'],
                     'cluster' => $clusterLabel, // Simpan label cluster (C1, C2, atau C3)
                     'created_at' => now(),
@@ -222,14 +216,15 @@ class KlasterisasiController extends Controller
     }
 
     // Fungsi untuk inisialisasi centroid secara acak
-    private function initCentroids($data, $k)
+    private function initCentroids($data)
     {
         // Sortir data berdasarkan total_frekuensi + total_kerusakan + luas_terdampak + total_korban
         usort($data, function ($a, $b) {
-            $sumA = $a['total_frekuensi'] + $a['total_kerusakan'] + $a['luas_terdampak'] + $a['total_korban'];
-            $sumB = $b['total_frekuensi'] + $b['total_kerusakan'] + $b['luas_terdampak'] + $b['total_korban'];
+            $sumA = $a['total_frekuensi'] + $a['total_kerusakan'] + $a['total_korban'];
+            $sumB = $b['total_frekuensi'] + $b['total_kerusakan'] + $b['total_korban'];
             return $sumA <=> $sumB; // Mengurutkan dari nilai terendah ke tertinggi
         });
+
 
         // Mengambil centroid awal berdasarkan urutan
         $centroids = [];
@@ -240,7 +235,6 @@ class KlasterisasiController extends Controller
             'nama_kecamatan' => $data[0]['nama_kecamatan'],
             'total_frekuensi' => $data[0]['total_frekuensi'],
             'total_kerusakan' => $data[0]['total_kerusakan'],
-            'luas_terdampak' => $data[0]['luas_terdampak'],
             'total_korban' => $data[0]['total_korban'],
         ];
 
@@ -251,7 +245,6 @@ class KlasterisasiController extends Controller
             'nama_kecamatan' => $data[$medianIndex]['nama_kecamatan'],
             'total_frekuensi' => $data[$medianIndex]['total_frekuensi'],
             'total_kerusakan' => $data[$medianIndex]['total_kerusakan'],
-            'luas_terdampak' => $data[$medianIndex]['luas_terdampak'],
             'total_korban' => $data[$medianIndex]['total_korban'],
         ];
 
@@ -262,7 +255,6 @@ class KlasterisasiController extends Controller
             'nama_kecamatan' => $data[$lastIndex]['nama_kecamatan'],
             'total_frekuensi' => $data[$lastIndex]['total_frekuensi'],
             'total_kerusakan' => $data[$lastIndex]['total_kerusakan'],
-            'luas_terdampak' => $data[$lastIndex]['luas_terdampak'],
             'total_korban' => $data[$lastIndex]['total_korban'],
         ];
 
@@ -282,9 +274,9 @@ class KlasterisasiController extends Controller
                 //Jarak dihitung menggunakan rumus Euclidean Distance
                 $distance = sqrt(pow($point['total_frekuensi'] -
                     $centroid['total_frekuensi'], 2) + pow($point['total_kerusakan'] -
-                    $centroid['total_kerusakan'], 2) + pow($point['luas_terdampak'] -
-                    $centroid['luas_terdampak'], 2) + pow($point['total_korban'] -
+                    $centroid['total_kerusakan'], 2) + pow($point['total_korban'] -
                     $centroid['total_korban'], 2));
+
                 //Variabel $minDistance digunakan untuk menyimpan jarak terdekat yang ditemukan
                 //Variabel $closestCentroid digunakan untuk menyimpan indeks centroid yang paling dekat.
                 if ($distance < $minDistance) {
@@ -295,7 +287,19 @@ class KlasterisasiController extends Controller
             // Variabel $closestCentroid digunakan sebagai kunci untuk menyimpan titik data dalam array $clusters
             $clusters[$closestCentroid][] = $point;
         }
-        return $clusters;
+        $datas = [
+            'clusters' => $clusters,
+            'euclidean_distances' => array_map(function ($point) use ($centroids) {
+                return array_map(function ($centroid) use ($point) {
+                    return sqrt(
+                        pow($point['total_frekuensi'] - $centroid['total_frekuensi'], 2) +
+                            pow($point['total_kerusakan'] - $centroid['total_kerusakan'], 2) +
+                            pow($point['total_korban'] - $centroid['total_korban'], 2)
+                    );
+                }, $centroids);
+            }, $data)
+        ];
+        return $datas;
     }
 
     private function updateCentroids($data, $clusters, $k)
@@ -305,14 +309,12 @@ class KlasterisasiController extends Controller
             if (isset($clusters[$i]) && count($clusters[$i]) > 0) {
                 $frekuensiTotal = array_sum(array_column($clusters[$i], 'total_frekuensi'));
                 $kerusakanTotal = array_sum(array_column($clusters[$i], 'total_kerusakan'));
-                $luasTotal = array_sum(array_column($clusters[$i], 'luas_terdampak'));
                 $korbanTotal = array_sum(array_column($clusters[$i], 'total_korban'));
                 $clusterSize = count($clusters[$i]);
 
                 $newCentroids[] = [
                     'total_frekuensi' => $frekuensiTotal / $clusterSize,
                     'total_kerusakan' => $kerusakanTotal / $clusterSize,
-                    'luas_terdampak' => $luasTotal / $clusterSize,
                     'total_korban' => $korbanTotal / $clusterSize,
                 ];
             } else {
@@ -323,7 +325,7 @@ class KlasterisasiController extends Controller
         return $newCentroids;
     }
 
-    private function insertIterationData($iteration, $centroids, $clusters)
+    private function insertIterationData($iteration, $centroids, $clusters, $euclidean_distance)
     {
         // Format data untuk setiap centroid, tambahkan label C1, C2, atau C3
         $labeledCentroids = [];
@@ -353,13 +355,66 @@ class KlasterisasiController extends Controller
         // Format cluster data sebagai JSON
         $centroidData = json_encode($labeledCentroids);
         $clusterData = json_encode($clusters);
+        $euclideanDistanceData = json_encode($euclidean_distance);
 
         // Insert into tb_log_iterasi table
         DB::table('tb_log_iterasi')->insert([
             'iteration' => $iteration,
             'centroid_data' => $centroidData,
             'cluster_data' => $clusterData,
+            'euclidean_distance' => $euclideanDistanceData,
             'created_at' => now(),
         ]);
+    }
+
+    public function showMap(Request $request)
+    {
+        // Load existing GeoJSON file
+        $geojsonFile = file_get_contents(public_path('data/kec_jatim.geojson'));
+        $geojsonData = json_decode($geojsonFile);
+
+        // Fetch clustering data
+        $clusters = DB::table('tb_clustering')
+            ->join('tb_kecamatan', 'tb_clustering.id_kecamatan', '=', 'tb_kecamatan.id')
+            ->join('tb_kotakab', 'tb_kecamatan.id_kotakab', '=', 'tb_kotakab.id')
+            ->select('tb_kecamatan.id as id_kecamatan', 'tb_kotakab.id as id_kotakab', 'tb_kotakab.nama_kotakab', 'tb_kecamatan.nama_kecamatan', 'tb_clustering.cluster')
+            ->get();
+
+        // Create an associative array to map clustering data
+        $clusterMap = [];
+        foreach ($clusters as $cluster) {
+            // Convert nama_kecamatan to uppercase and remove spaces for the map
+            $cleanedNamaKecamatan = strtoupper(str_replace(' ', '', $cluster->nama_kecamatan));
+            $clusterMap[$cleanedNamaKecamatan] = [
+                'id_kotakab' => $cluster->id_kotakab,
+                'nama_kotakab' => $cluster->nama_kotakab,
+                'id_kecamatan' => $cluster->id_kecamatan,
+                'nama_kecamatan' => $cluster->nama_kecamatan,
+                'cluster' => $cluster->cluster,
+            ];
+        }
+
+        // Log the count of GeoJSON features
+        Log::info("GeoJSON Features Count: ", ['count' => count($geojsonData->features)]);
+
+        foreach ($geojsonData->features as $feature) {
+            // Clean the feature's NAME_3 property
+            $nama_kecamatan = strtoupper(str_replace(' ', '', $feature->properties->NAME_3));
+            Log::info("Processing feature for: ", ['kabupaten' => $clusterMap[$nama_kecamatan]['nama_kotakab'] ?? null, 'kecamatan' => $nama_kecamatan]);
+
+            if (isset($clusterMap[$nama_kecamatan])) {
+                $feature->properties->cluster = $clusterMap[$nama_kecamatan]['cluster'];
+                Log::info("Assigned cluster: ", ['cluster' => $feature->properties->cluster]);
+            } else {
+                Log::info("Cluster not found for: ", ['kabupaten' => $clusterMap[$nama_kecamatan]['nama_kotakab'] ?? null, 'kecamatan' => $nama_kecamatan]);
+                $feature->properties->cluster = null;
+            }
+        }
+
+        // Convert updated GeoJSON back to JSON
+        $modifiedGeojsonString = json_encode($geojsonData);
+
+        // Pass modified GeoJSON to the view
+        return view('map.index', ['geojson' => $modifiedGeojsonString]);
     }
 }
