@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 
 /**
  * Class TbDatabencana
- * 
+ *
  * @property int $id
  * @property int $id_kotakab
  * @property int $id_kecamatan
@@ -19,11 +19,10 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $tahun
  * @property int $frekuensi_kejadian
  * @property int $total_kerusakan
- * @property float $luas_terdampak
  * @property int $total_korban
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
- * 
+ *
  * @property TbJenisbencana $tb_jenisbencana
  * @property TbKecamatan $tb_kecamatan
  * @property TbKotakab $tb_kotakab
@@ -40,7 +39,6 @@ class TbDatabencana extends Model
 		'id_jenisbencana' => 'int',
 		'frekuensi_kejadian' => 'int',
 		'total_kerusakan' => 'int',
-		'luas_terdampak' => 'float',
 		'total_korban' => 'int'
 	];
 
@@ -51,7 +49,6 @@ class TbDatabencana extends Model
 		'tahun',
 		'frekuensi_kejadian',
 		'total_kerusakan',
-		'luas_terdampak',
 		'total_korban'
 	];
 

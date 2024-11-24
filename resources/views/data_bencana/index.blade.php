@@ -44,8 +44,6 @@
                                         <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
                                             Total Kerusakan</th>
                                         <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
-                                            Luas Daerah Terdampak</th>
-                                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
                                             Total Korban Jiwa</th>
                                         <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
                                             Aksi</th>
@@ -80,10 +78,6 @@
                                             </td>
                                             <td class="align-middle">
                                                 <span class="text-sm font-weight-bold">{{ $data_bencana->total_kerusakan }}
-                                                </span>
-                                            </td>
-                                            <td class="align-middle">
-                                                <span class="text-sm font-weight-bold">{{ $data_bencana->luas_terdampak }}
                                                 </span>
                                             </td>
                                             <td class="align-middle">

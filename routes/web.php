@@ -29,6 +29,7 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+Route::get('/', [LoginController::class, 'showLoginForm'])->name('login')->middleware('guest');
 Route::get('login', [LoginController::class, 'showLoginForm'])->name('login')->middleware('guest');
 Route::post('login', [LoginController::class, 'login']);
 Route::middleware(['auth'])->group(function () {
@@ -52,7 +53,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('klasterisasi', [KlasterisasiController::class, 'index']);
     Route::post('klasterisasi/proses', [KlasterisasiController::class, 'prosesKlasterisasi'])->name('klasterisasi.proses');
     Route::get('klasterisasi/detail/{id}', [KlasterisasiController::class, 'show'])->name('klasterisasi.detail');
-    Route::get('klasterisasi/pemetaan', [KlasterisasiController::class, 'showMap'])->name('klasterisasi.pemetaan');
+    Route::get('pemetaan', [KlasterisasiController::class, 'showMap'])->name('klasterisasi.pemetaan');
 
     // Route::get('export/artikel', [ArtikelController::class, 'export']);
     // Route::get('export/pengguna', [PenggunaController::class, 'export']);

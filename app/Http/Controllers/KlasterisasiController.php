@@ -41,7 +41,6 @@ class KlasterisasiController extends Controller
                 tb_databencana.tahun,
                 tb_databencana.frekuensi_kejadian,
                 tb_databencana.total_kerusakan,
-                tb_databencana.luas_terdampak,
                 tb_databencana.total_korban
             ')
             ->join('tb_kecamatan', 'tb_clustering.id_kecamatan', '=', 'tb_kecamatan.id')
@@ -92,10 +91,7 @@ class KlasterisasiController extends Controller
             ];
         }
 
-
-
         // Fungsi untuk mengecek apakah ada perubahan data
-        // Buat hash dari data bencana
         $currentHash = md5(json_encode($data)); // Hash data bencana
 
         // Ambil hash terakhir dari database
@@ -218,7 +214,7 @@ class KlasterisasiController extends Controller
     // Fungsi untuk inisialisasi centroid secara acak
     private function initCentroids($data)
     {
-        // Sortir data berdasarkan total_frekuensi + total_kerusakan + luas_terdampak + total_korban
+        // Sortir data berdasarkan total_frekuensi + total_kerusakan + total_korban
         usort($data, function ($a, $b) {
             $sumA = $a['total_frekuensi'] + $a['total_kerusakan'] + $a['total_korban'];
             $sumB = $b['total_frekuensi'] + $b['total_kerusakan'] + $b['total_korban'];
@@ -329,6 +325,8 @@ class KlasterisasiController extends Controller
     {
         // Format data untuk setiap centroid, tambahkan label C1, C2, atau C3
         $labeledCentroids = [];
+        $membersCount = ['C1' => 0, 'C2' => 0, 'C3' => 0]; // Menyimpan jumlah anggota untuk setiap cluster
+
         foreach ($centroids as $index => $centroid) {
             $label = '';
 
@@ -343,6 +341,11 @@ class KlasterisasiController extends Controller
                 case 2:
                     $label = 'C3';  // Tinggi
                     break;
+            }
+
+            // Hitung jumlah anggota untuk setiap cluster
+            if (isset($clusters[$index])) {
+                $membersCount[$label] = count($clusters[$index]);
             }
 
             // Tambahkan label ke centroid data
@@ -363,27 +366,29 @@ class KlasterisasiController extends Controller
             'centroid_data' => $centroidData,
             'cluster_data' => $clusterData,
             'euclidean_distance' => $euclideanDistanceData,
+            'members_count' => json_encode($membersCount),
             'created_at' => now(),
         ]);
     }
 
+
     public function showMap(Request $request)
     {
-        // Load existing GeoJSON file
+        // Load GeoJSON file
         $geojsonFile = file_get_contents(public_path('data/kec_jatim.geojson'));
         $geojsonData = json_decode($geojsonFile);
 
-        // Fetch clustering data
+        // Ambil data clustering
         $clusters = DB::table('tb_clustering')
             ->join('tb_kecamatan', 'tb_clustering.id_kecamatan', '=', 'tb_kecamatan.id')
             ->join('tb_kotakab', 'tb_kecamatan.id_kotakab', '=', 'tb_kotakab.id')
             ->select('tb_kecamatan.id as id_kecamatan', 'tb_kotakab.id as id_kotakab', 'tb_kotakab.nama_kotakab', 'tb_kecamatan.nama_kecamatan', 'tb_clustering.cluster')
             ->get();
 
-        // Create an associative array to map clustering data
+        // Membuat asosiatif array untuk mapping data cluster
         $clusterMap = [];
         foreach ($clusters as $cluster) {
-            // Convert nama_kecamatan to uppercase and remove spaces for the map
+            // Mengubah nama_kecamatan ke uppercase
             $cleanedNamaKecamatan = strtoupper(str_replace(' ', '', $cluster->nama_kecamatan));
             $clusterMap[$cleanedNamaKecamatan] = [
                 'id_kotakab' => $cluster->id_kotakab,
@@ -394,11 +399,10 @@ class KlasterisasiController extends Controller
             ];
         }
 
-        // Log the count of GeoJSON features
+        // Fungsi logging
         Log::info("GeoJSON Features Count: ", ['count' => count($geojsonData->features)]);
 
         foreach ($geojsonData->features as $feature) {
-            // Clean the feature's NAME_3 property
             $nama_kecamatan = strtoupper(str_replace(' ', '', $feature->properties->NAME_3));
             Log::info("Processing feature for: ", ['kabupaten' => $clusterMap[$nama_kecamatan]['nama_kotakab'] ?? null, 'kecamatan' => $nama_kecamatan]);
 
@@ -411,10 +415,9 @@ class KlasterisasiController extends Controller
             }
         }
 
-        // Convert updated GeoJSON back to JSON
+        // Mengubah GeoJSON terupdate ke JSON
         $modifiedGeojsonString = json_encode($geojsonData);
 
-        // Pass modified GeoJSON to the view
         return view('map.index', ['geojson' => $modifiedGeojsonString]);
     }
 }

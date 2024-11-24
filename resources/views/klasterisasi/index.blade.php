@@ -39,8 +39,6 @@
                                         <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
                                             Total Kerusakan</th>
                                         <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
-                                            Luas Daerah Terdampak</th>
-                                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
                                             Total Korban Jiwa</th>
                                         <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
                                             Cluster</th>
@@ -67,10 +65,6 @@
                                             </td>
                                             <td class="align-middle">
                                                 <span class="text-sm font-weight-bold">{{ $hasil->total_kerusakan }}
-                                                </span>
-                                            </td>
-                                            <td class="align-middle">
-                                                <span class="text-sm font-weight-bold">{{ $hasil->luas_terdampak }}
                                                 </span>
                                             </td>
                                             <td class="align-middle">
@@ -123,7 +117,6 @@
                                                 <td>{{ $centroid['nama_kecamatan'] }}</td>
                                                 <td>{{ $centroid['total_frekuensi'] }}</td>
                                                 <td>{{ $centroid['total_kerusakan'] }}</td>
-                                                <td>{{ $centroid['luas_terdampak'] }}</td>
                                                 <td>{{ $centroid['total_korban'] }}</td>
                                             </tr>
                                         @endforeach
@@ -153,7 +146,6 @@
                                                     <td>{{ $point['nama_kecamatan'] }}</td>
                                                     <td>{{ $point['total_frekuensi'] }}</td>
                                                     <td>{{ $point['total_kerusakan'] }}</td>
-                                                    <td>{{ $point['luas_terdampak'] }}</td>
                                                     <td>{{ $point['total_korban'] }}</td>
                                                 </tr>
                                             @endforeach

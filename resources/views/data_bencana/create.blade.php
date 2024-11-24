@@ -74,12 +74,6 @@
                                 </div>
                                 <div class="col-md-12">
                                     <div class="input-group input-group-static my-3">
-                                        <label class="">Luas Daerah Terdampak</label>
-                                        <input type="number" name="luas_terdampak" class="form-control" step="0.01">
-                                    </div>
-                                </div>
-                                <div class="col-md-12">
-                                    <div class="input-group input-group-static my-3">
                                         <label class="">Total Korban Jiwa</label>
                                         <input type="number" name="total_korban" class="form-control">
                                     </div>

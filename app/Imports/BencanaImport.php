@@ -26,7 +26,6 @@ class BencanaImport implements ToModel, WithHeadingRow
             'tahun' => $row['tahun'],
             'frekuensi_kejadian' => $row['frekuensi_kejadian'],
             'total_kerusakan' => $row['total_kerusakan'],
-            'luas_terdampak' => $row['luas_daerah'],
             'total_korban' => $row['total_korban'],
         ]);
     }

@@ -43,7 +43,6 @@
                                                 <td>C{{ $index + 1 }}</td>
                                                 <td>{{ $centroid['centroid']['total_frekuensi'] }}</td>
                                                 <td>{{ $centroid['centroid']['total_kerusakan'] }}</td>
-                                                <td>{{ $centroid['centroid']['luas_terdampak'] }}</td>
                                                 <td>{{ $centroid['centroid']['total_korban'] }}</td>
                                             </tr>
                                         @endforeach
@@ -70,7 +69,6 @@
                                                     <td>{{ $data['nama_kecamatan'] }}</td>
                                                     <td>{{ $data['total_frekuensi'] }}</td>
                                                     <td>{{ $data['total_kerusakan'] }}</td>
-                                                    <td>{{ $data['luas_terdampak'] }}</td>
                                                     <td>{{ $data['total_korban'] }}</td>
                                                 </tr>
                                             @endforeach

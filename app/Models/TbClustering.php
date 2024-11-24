@@ -17,7 +17,6 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $id_kecamatan
  * @property int $frekuensi_kejadian
  * @property int $total_kerusakan
- * @property int $luas_terdampak
  * @property int $total_korban
  * @property string $cluster
  * @property Carbon|null $created_at
@@ -38,7 +37,6 @@ class TbClustering extends Model
 		'id_kecamatan' => 'int',
 		'frekuensi_kejadian' => 'int',
 		'total_kerusakan' => 'int',
-		'luas_terdampak' => 'double',
 		'total_korban' => 'int'
 	];
 
@@ -47,7 +45,6 @@ class TbClustering extends Model
 		'id_kecamatan',
 		'frekuensi_kejadian',
 		'total_kerusakan',
-		'luas_terdampak',
 		'total_korban',
 		'cluster',
 		'data_hash'

@@ -24,7 +24,6 @@ return new class extends Migration
             $table->string('tahun');
             $table->integer('frekuensi_kejadian');
             $table->integer('total_kerusakan');
-            $table->double('luas_terdampak');
             $table->integer('total_korban');
             $table->timestamps();
         });

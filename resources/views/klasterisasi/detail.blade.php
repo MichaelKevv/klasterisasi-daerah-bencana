@@ -79,10 +79,6 @@
                                                 </span>
                                             </td>
                                             <td class="align-middle">
-                                                <span class="text-sm font-weight-bold">{{ $data_bencana->luas_terdampak }}
-                                                </span>
-                                            </td>
-                                            <td class="align-middle">
                                                 <span class="text-sm font-weight-bold">{{ $data_bencana->total_korban }}
                                                 </span>
                                             </td>
