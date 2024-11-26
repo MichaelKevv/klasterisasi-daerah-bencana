@@ -2,17 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\TbKepalaSekolah;
-use App\Models\TbPengguna;
-use App\Models\TbPetuga;
-use App\Models\TbSiswa;
 use App\Models\TbUser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Validator;
-use RealRashid\SweetAlert\Facades\Alert;
 
 use Illuminate\Support\Facades\Session;
 

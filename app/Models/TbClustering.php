@@ -47,6 +47,7 @@ class TbClustering extends Model
 		'total_kerusakan',
 		'total_korban',
 		'cluster',
+		'tahun',
 		'data_hash'
 	];
 

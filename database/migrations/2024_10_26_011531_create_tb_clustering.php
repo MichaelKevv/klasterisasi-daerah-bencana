@@ -23,6 +23,7 @@ return new class extends Migration
             $table->integer('total_kerusakan');
             $table->integer('total_korban');
             $table->string('cluster');
+            $table->string('tahun');
             $table->timestamps();
         });
     }

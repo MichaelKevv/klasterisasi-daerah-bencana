@@ -6,11 +6,7 @@ use App\Models\TbClustering;
 use App\Models\TbDataBencana;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Validator;
 use RealRashid\SweetAlert\Facades\Alert;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Log;
 
 class KlasterisasiController extends Controller
 {
@@ -21,9 +17,30 @@ class KlasterisasiController extends Controller
      */
     public function index()
     {
-        $data = TbClustering::all();
-        return view('klasterisasi.index', compact('data'));
+        $tahunList = TbDataBencana::selectRaw('tahun')
+            ->distinct()
+            ->orderBy('tahun', 'asc')
+            ->pluck('tahun');
+        return view('klasterisasi.index', compact('tahunList'));
     }
+
+    public function fetchData(Request $request)
+    {
+        $tahunDipilih = $request->input('tahun');
+
+        if (!$tahunDipilih) {
+            return response()->json(['status' => 'error', 'message' => 'Tahun belum dipilih.'], 400);
+        }
+
+        $data = TbClustering::with('tb_kecamatan', 'tb_kotakab')->where('tahun', $tahunDipilih)->get();
+
+        if ($data->isEmpty()) {
+            return response()->json(['status' => 'empty', 'message' => 'Data klasterisasi tidak ditemukan untuk tahun ini.']);
+        }
+
+        return response()->json(['status' => 'success', 'data' => $data]);
+    }
+
 
     /**
      * Display the specified resource.
@@ -52,30 +69,34 @@ class KlasterisasiController extends Controller
 
         if ($clustering->isEmpty()) {
             Alert::error('Data not found', 'Data tidak ditemukan');
-            return redirect('klasterisasi');
+            return redirect('klasterisasi/hasil');
         }
 
         return view('klasterisasi.detail', compact('clustering'));
     }
 
-    public function prosesKlasterisasi()
+    public function prosesKlasterisasi(Request $request)
     {
+        $tahun = $request->input('tahun');
         // Step 1: Ambil dan akumulasi data bencana per kecamatan
         $dataBencana = TbDatabencana::selectRaw('
                 tb_kotakab.id as id_kotakab,
                 tb_kotakab.nama_kotakab as nama_kabupaten,
                 tb_kecamatan.id as id_kecamatan,
                 tb_kecamatan.nama_kecamatan,
+                tb_databencana.tahun,
                 SUM(tb_databencana.frekuensi_kejadian) as total_frekuensi,
                 SUM(tb_databencana.total_kerusakan) as total_kerusakan,
                 SUM(tb_databencana.total_korban) as total_korban
             ')
             ->join('tb_kecamatan', 'tb_databencana.id_kecamatan', '=', 'tb_kecamatan.id')
             ->join('tb_kotakab', 'tb_kecamatan.id_kotakab', '=', 'tb_kotakab.id')
-            ->groupBy('tb_kecamatan.nama_kecamatan', 'tb_kotakab.nama_kotakab', 'tb_kotakab.id', 'tb_kecamatan.id')
+            ->where('tb_databencana.tahun', $tahun)
+            ->groupBy('tb_kecamatan.nama_kecamatan', 'tb_kotakab.nama_kotakab', 'tb_kotakab.id', 'tb_kecamatan.id', 'tb_databencana.tahun')
             ->orderBy('tb_kotakab.nama_kotakab')
             ->orderBy('tb_kecamatan.nama_kecamatan')
             ->get();
+
 
         // Step 2: Format data untuk K-Means
         $data = [];
@@ -88,6 +109,7 @@ class KlasterisasiController extends Controller
                 'total_frekuensi' => $item->total_frekuensi,
                 'total_kerusakan' => $item->total_kerusakan,
                 'total_korban' => $item->total_korban,
+                'tahun' => $item->tahun,
             ];
         }
 
@@ -95,33 +117,32 @@ class KlasterisasiController extends Controller
         $currentHash = md5(json_encode($data)); // Hash data bencana
 
         // Ambil hash terakhir dari database
-        $lastHash = TbClustering::orderBy('created_at', 'desc')->value('data_hash');
+        $lastHash = TbClustering::where('tahun', $tahun)->orderBy('created_at', 'desc')->value('data_hash');
 
         // Cek apakah hash berubah
         if ($currentHash === $lastHash) {
             Alert::error('Peringatan', 'Tidak ada perubahan data bencana, proses klasterisasi tidak dilakukan.');
-            return redirect('klasterisasi');
+            return redirect('klasterisasi/hasil');
         }
 
         // Step 3: Tentukan jumlah cluster
         $jumlahCluster = 3;
 
         // Step 4: Jalankan algoritma K-Means
-        $clusters = $this->kMeans($data, $jumlahCluster);
-        $centroids = $this->initCentroids($data);
+        $clusters = $this->kMeans($data, $jumlahCluster, $tahun);
 
         // Step 5: Hapus data lama di tb_clustering jika ada perubahan data
-        TbClustering::truncate(); // Hapus semua data di tabel tb_clustering
+        TbClustering::where('tahun', $tahun)->delete(); // Hapus data lama untuk tahun tersebut
 
         // Step 6: Simpan hasil clustering ke database
         $this->insertHasilKlasterisasi($clusters, $currentHash);
 
         Alert::success('Success', 'Klasterisasi Berhasil');
 
-        return redirect('klasterisasi');
+        return redirect('klasterisasi/hasil');
     }
 
-    private function kMeans($data, $k)
+    private function kMeans($data, $k, $tahun)
     {
         // Step 1: Inisialisasi centroid secara acak
         $centroids = $this->initCentroids($data, $k);
@@ -135,7 +156,7 @@ class KlasterisasiController extends Controller
             $newCentroids = $this->updateCentroids($data, $clusters['clusters'], $k);
 
             // Simpan data iterasi
-            $this->insertIterationData($i + 1, $this->labelCentroids($centroids), $clusters['clusters'], $clusters['euclidean_distances']);
+            $this->insertIterationData($i + 1, $this->labelCentroids($centroids), $clusters['clusters'], $clusters['euclidean_distances'], $tahun);
 
             // Cek konvergensi
             if ($centroids == $newCentroids) {
@@ -204,6 +225,7 @@ class KlasterisasiController extends Controller
                     'total_kerusakan' => $data['total_kerusakan'],
                     'total_korban' => $data['total_korban'],
                     'cluster' => $clusterLabel, // Simpan label cluster (C1, C2, atau C3)
+                    'tahun' => $data['tahun'],
                     'created_at' => now(),
                     'data_hash' => $currentHash, // Simpan hash data
                 ]);
@@ -321,12 +343,13 @@ class KlasterisasiController extends Controller
         return $newCentroids;
     }
 
-    private function insertIterationData($iteration, $centroids, $clusters, $euclidean_distance)
+    private function insertIterationData($iteration, $centroids, $clusters, $euclidean_distance, $tahun)
     {
         // Format data untuk setiap centroid, tambahkan label C1, C2, atau C3
         $labeledCentroids = [];
         $membersCount = ['C1' => 0, 'C2' => 0, 'C3' => 0]; // Menyimpan jumlah anggota untuk setiap cluster
 
+        // Iterasi pada setiap centroid dan cluster
         foreach ($centroids as $index => $centroid) {
             $label = '';
 
@@ -353,71 +376,65 @@ class KlasterisasiController extends Controller
                 'label' => $label,
                 'centroid' => $centroid,
             ];
-        }
 
-        // Format cluster data sebagai JSON
-        $centroidData = json_encode($labeledCentroids);
-        $clusterData = json_encode($clusters);
-        $euclideanDistanceData = json_encode($euclidean_distance);
+            // Insert centroid ke tb_log_iterasi pada setiap iterasi
+            DB::table('tb_log_iterasi')->insert([
+                'tahun' => $tahun,
+                'iteration' => $iteration,
+                'cluster_label' => $label,
+                'centroid_frekuensi' => $centroid['centroid']['total_frekuensi'],
+                'centroid_kerusakan' => $centroid['centroid']['total_kerusakan'],
+                'centroid_korban' => $centroid['centroid']['total_korban'],
+                'created_at' => now(),
+                'updated_at' => now(),
+                'type' => 'centroid'  // Tipe sebagai centroid
+            ]);
 
-        // Insert into tb_log_iterasi table
-        DB::table('tb_log_iterasi')->insert([
-            'iteration' => $iteration,
-            'centroid_data' => $centroidData,
-            'cluster_data' => $clusterData,
-            'euclidean_distance' => $euclideanDistanceData,
-            'members_count' => json_encode($membersCount),
-            'created_at' => now(),
-        ]);
-    }
+            // Insert data untuk anggota cluster
+            foreach ($clusters[$index] as $point) {
+                // Hitung jarak Euclidean ke C1, C2, C3
+                $distanceC1 = sqrt(pow($point['total_frekuensi'] - $centroids[0]['centroid']['total_frekuensi'], 2) +
+                    pow($point['total_kerusakan'] - $centroids[0]['centroid']['total_kerusakan'], 2) +
+                    pow($point['total_korban'] - $centroids[0]['centroid']['total_korban'], 2));
 
+                $distanceC2 = sqrt(pow($point['total_frekuensi'] - $centroids[1]['centroid']['total_frekuensi'], 2) +
+                    pow($point['total_kerusakan'] - $centroids[1]['centroid']['total_kerusakan'], 2) +
+                    pow($point['total_korban'] - $centroids[1]['centroid']['total_korban'], 2));
 
-    public function showMap(Request $request)
-    {
-        // Load GeoJSON file
-        $geojsonFile = file_get_contents(public_path('data/kec_jatim.geojson'));
-        $geojsonData = json_decode($geojsonFile);
+                $distanceC3 = sqrt(pow($point['total_frekuensi'] - $centroids[2]['centroid']['total_frekuensi'], 2) +
+                    pow($point['total_kerusakan'] - $centroids[2]['centroid']['total_kerusakan'], 2) +
+                    pow($point['total_korban'] - $centroids[2]['centroid']['total_korban'], 2));
 
-        // Ambil data clustering
-        $clusters = DB::table('tb_clustering')
-            ->join('tb_kecamatan', 'tb_clustering.id_kecamatan', '=', 'tb_kecamatan.id')
-            ->join('tb_kotakab', 'tb_kecamatan.id_kotakab', '=', 'tb_kotakab.id')
-            ->select('tb_kecamatan.id as id_kecamatan', 'tb_kotakab.id as id_kotakab', 'tb_kotakab.nama_kotakab', 'tb_kecamatan.nama_kecamatan', 'tb_clustering.cluster')
-            ->get();
+                // Tentukan cluster terdekat
+                $minDistance = min($distanceC1, $distanceC2, $distanceC3);
+                $closestCluster = '';
+                if ($minDistance == $distanceC1) {
+                    $closestCluster = 'C1';
+                } elseif ($minDistance == $distanceC2) {
+                    $closestCluster = 'C2';
+                } else {
+                    $closestCluster = 'C3';
+                }
 
-        // Membuat asosiatif array untuk mapping data cluster
-        $clusterMap = [];
-        foreach ($clusters as $cluster) {
-            // Mengubah nama_kecamatan ke uppercase
-            $cleanedNamaKecamatan = strtoupper(str_replace(' ', '', $cluster->nama_kecamatan));
-            $clusterMap[$cleanedNamaKecamatan] = [
-                'id_kotakab' => $cluster->id_kotakab,
-                'nama_kotakab' => $cluster->nama_kotakab,
-                'id_kecamatan' => $cluster->id_kecamatan,
-                'nama_kecamatan' => $cluster->nama_kecamatan,
-                'cluster' => $cluster->cluster,
-            ];
-        }
-
-        // Fungsi logging
-        Log::info("GeoJSON Features Count: ", ['count' => count($geojsonData->features)]);
-
-        foreach ($geojsonData->features as $feature) {
-            $nama_kecamatan = strtoupper(str_replace(' ', '', $feature->properties->NAME_3));
-            Log::info("Processing feature for: ", ['kabupaten' => $clusterMap[$nama_kecamatan]['nama_kotakab'] ?? null, 'kecamatan' => $nama_kecamatan]);
-
-            if (isset($clusterMap[$nama_kecamatan])) {
-                $feature->properties->cluster = $clusterMap[$nama_kecamatan]['cluster'];
-                Log::info("Assigned cluster: ", ['cluster' => $feature->properties->cluster]);
-            } else {
-                Log::info("Cluster not found for: ", ['kabupaten' => $clusterMap[$nama_kecamatan]['nama_kotakab'] ?? null, 'kecamatan' => $nama_kecamatan]);
-                $feature->properties->cluster = null;
+                // Insert data anggota dan jarak Euclidean ke tb_log_iterasi
+                DB::table('tb_log_iterasi')->insert([
+                    'tahun' => $tahun,
+                    'iteration' => $iteration,
+                    'cluster_label' => $closestCluster,  // Label cluster terdekat
+                    'frekuensi_kejadian' => $point['total_frekuensi'],
+                    'total_kerusakan' => $point['total_kerusakan'],
+                    'total_korban' => $point['total_korban'],
+                    'id_kotakab' => $point['id_kotakab'],
+                    'id_kecamatan' => $point['id_kecamatan'],
+                    'c1' => $distanceC1,  // Jarak ke C1
+                    'c2' => $distanceC2,  // Jarak ke C2
+                    'c3' => $distanceC3,  // Jarak ke C3
+                    'terdekat' => $closestCluster,  // Cluster terdekat
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                    'type' => 'member'  // Tipe sebagai anggota cluster
+                ]);
             }
         }
-
-        // Mengubah GeoJSON terupdate ke JSON
-        $modifiedGeojsonString = json_encode($geojsonData);
-
-        return view('map.index', ['geojson' => $modifiedGeojsonString]);
     }
 }

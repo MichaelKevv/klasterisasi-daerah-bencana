@@ -20,7 +20,9 @@ class KecamatanController extends Controller
      */
     public function index()
     {
-        $data = TbKecamatan::all();
+        $data = TbKecamatan::join('tb_kotakab', 'tb_kotakab.id', 'tb_kecamatan.id_kotakab')
+            ->orderBy('tb_kotakab.nama_kotakab', 'asc')  // Mengurutkan berdasarkan nama kota/kabupaten
+            ->orderBy('tb_kecamatan.nama_kecamatan', 'asc')->get();
         $title = 'Hapus Kecamatan';
         $text = "Apakah anda yakin untuk hapus?";
         confirmDelete($title, $text);

@@ -53,8 +53,6 @@
                                         <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
                                             Total Kerusakan</th>
                                         <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
-                                            Luas Daerah Terdampak</th>
-                                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
                                             Total Korban Jiwa</th>
                                     </tr>
                                 </thead>

@@ -12,8 +12,10 @@ use App\Http\Controllers\KlasterisasiTestController;
 use App\Http\Controllers\KotaKabController;
 use App\Http\Controllers\KriteriaController;
 use App\Http\Controllers\LoginController;
+use App\Http\Controllers\PemetaanController;
 use App\Http\Controllers\PengaduanController;
 use App\Http\Controllers\PenggunaController;
+use App\Http\Controllers\PerhitunganController;
 use App\Http\Controllers\PetugasController;
 use App\Http\Controllers\SiswaController;
 use Illuminate\Support\Facades\Route;
@@ -38,29 +40,20 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('kotakab', KotaKabController::class);
     Route::resource('kecamatan', KecamatanController::class);
 
-    Route::get('kriteria', [KriteriaController::class, 'index'])->name('kriteria.index');
-    Route::get('kriteria/create', [KriteriaController::class, 'create'])->name('kriteria.create');
-    Route::post('kriteria/store', [KriteriaController::class, 'store'])->name('kriteria.store');
-    Route::get('kriteria/{kriteria}/edit', [KriteriaController::class, 'edit'])->name('kriteria.edit');
-    Route::put('kriteria/{kriteria}', [KriteriaController::class, 'update'])->name('kriteria.update');
-    Route::delete('kriteria/{kriteria}', [KriteriaController::class, 'destroy'])->name('kriteria.destroy');
-
     Route::resource('jenis_bencana', JenisBencanaController::class);
     Route::resource('data_bencana', DataBencanaController::class);
+    Route::get('data_bencana/{id_kecamatan}/{tahun}', [DataBencanaController::class, 'show']);
     Route::post('data_bencana/import', [DataBencanaController::class, 'import'])->name('data_bencana.import');
     Route::get('get-kecamatan/{id}', [DataBencanaController::class, 'getKecamatan']);
 
-    Route::get('klasterisasi', [KlasterisasiController::class, 'index']);
+    Route::get('klasterisasi/hasil', [KlasterisasiController::class, 'index'])->name('klasterisasi.hasil');
     Route::post('klasterisasi/proses', [KlasterisasiController::class, 'prosesKlasterisasi'])->name('klasterisasi.proses');
     Route::get('klasterisasi/detail/{id}', [KlasterisasiController::class, 'show'])->name('klasterisasi.detail');
-    Route::get('pemetaan', [KlasterisasiController::class, 'showMap'])->name('klasterisasi.pemetaan');
+    Route::get('klasterisasi/fetch', [KlasterisasiController::class, 'fetchData'])->name('klasterisasi.fetch');
 
-    // Route::get('export/artikel', [ArtikelController::class, 'export']);
-    // Route::get('export/pengguna', [PenggunaController::class, 'export']);
-    // Route::get('export/petugas', [PetugasController::class, 'export']);
-    // Route::get('export/siswa', [SiswaController::class, 'export']);
-    // Route::get('export/kepsek', [KepsekController::class, 'export']);
-    // Route::get('export/pengaduan', [PengaduanController::class, 'export']);
-    // Route::get('export/single/pengaduan/{id}', [PengaduanController::class, 'export_single']);
-    // Route::get('export/feedback', [FeedbackController::class, 'export']);
+    Route::get('klasterisasi/perhitungan', [PerhitunganController::class, 'index']);
+    Route::get('klasterisasi/perhitungan/{tahun}/{iteration}', [PerhitunganController::class, 'perhitungan'])->name('klasterisasi.perhitungan');
+
+    Route::get('pemetaan', [PemetaanController::class, 'showMap'])->name('klasterisasi.pemetaan');
+    Route::get('pemetaan/fetch', [PemetaanController::class, 'filterByYear'])->name('map.fetch');
 });

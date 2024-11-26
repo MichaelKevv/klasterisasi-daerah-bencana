@@ -19,7 +19,7 @@ class KotaKabController extends Controller
      */
     public function index()
     {
-        $data = TbKotakab::all();
+        $data = TbKotakab::orderBy('nama_kotakab', 'asc')->get();
         $title = 'Hapus Kota/Kab';
         $text = "Apakah anda yakin untuk hapus?";
         confirmDelete($title, $text);

@@ -23,8 +23,7 @@
                     <div class="card-body px-3 pb-2">
                         <a href="{{ route('data_bencana.create') }}"><button class="btn btn-success">Tambah
                                 Data</button></a>
-                        <button type="button" class="btn btn-primary" data-bs-toggle="modal"
-                            data-bs-target="#modalImport">
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalImport">
                             Import Data
                         </button>
                         <div class="table-responsive p-0">
@@ -115,7 +114,10 @@
                 <form action="{{ route('data_bencana.import') }}" method="POST" enctype="multipart/form-data">
                     <div class="modal-body">
                         @csrf
-                        <input type="file" name="file" required>
+                        <div class="form-group mb-2">
+                            <label for="tahun">Pilih File Excel</label>
+                            <input type="file" class="form-control" style="border: 1px solid #d2d6da !important; " name="file" required>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>

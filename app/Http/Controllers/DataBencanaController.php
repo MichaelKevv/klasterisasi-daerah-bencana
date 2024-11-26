@@ -8,6 +8,7 @@ use App\Models\TbJenisbencana;
 use App\Models\TbKecamatan;
 use App\Models\TbKotakab;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
@@ -75,9 +76,13 @@ class DataBencanaController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show($id)
+    public function show($id_kecamatan, $tahun)
     {
-        //
+        $data_bencana = TbDataBencana::with('tb_kotakab', 'tb_kecamatan', 'tb_jenisbencana')
+            ->where('id_kecamatan', $id_kecamatan)
+            ->where('tahun', $tahun)
+            ->first();
+        return view('data_bencana.detail', compact('data_bencana'));
     }
 
     /**
@@ -129,15 +134,20 @@ class DataBencanaController extends Controller
 
     public function import(Request $request)
     {
-        $request->validate([
-            'file' => 'required|mimes:xlsx',
-        ]);
+        $importer = new BencanaImport();
 
-        Excel::import(new BencanaImport, $request->file('file'));
+        try {
+            Excel::import($importer, $request->file('file'));
 
-        Alert::success('Success', 'Data Bencana berhasil diimport');
-
-        return redirect('data_bencana');
+            // Jika berhasil, kembalikan pesan sukses
+            return response()->json(['message' => 'Import berhasil.']);
+        } catch (Exception $e) {
+            // Jika ada error, tampilkan pesan error
+            return response()->json([
+                'message' => 'Import gagal.',
+                'errors' => $importer->getErrors(), // Tampilkan daftar error
+            ], 422);
+        }
     }
 
     // public function export()

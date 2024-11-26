@@ -3,11 +3,9 @@
 @section('navbar')
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb bg-transparent mb-0 pb-0 pt-1 px-0 me-sm-6 me-5">
-            <li class="breadcrumb-item text-sm"><a class="opacity-5 text-dark" href="{{ url('dashboard') }}">Dashboard</a>
-            </li>
-            <li class="breadcrumb-item text-sm text-dark active" aria-current="kecamatan">Pemetaan Daerah</li>
+            <li class="breadcrumb-item text-sm"><a class="opacity-5 text-dark" href="{{ url('dashboard') }}">Dashboard</a></li>
         </ol>
-        <h6 class="font-weight-bolder mb-0">Peta Hasil Klasterisasi</h6>
+        <h6 class="font-weight-bolder mb-0">Pemetaan Daerah</h6>
     </nav>
 @endsection
 @section('content')
@@ -21,12 +19,43 @@
                         </div>
                     </div>
                     <div class="card-body px-3 pb-2">
+                        <div class="form-group mb-2">
+                            <label for="tahun">Pilih Tahun:</label>
+                            <select id="tahun" class="form-select">
+                                <option value="">Semua Tahun</option>
+                                @foreach ($tahunList as $tahun)
+                                    <option value="{{ $tahun }}">{{ $tahun }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                         <div id="map" style="width: 100%; height: 600px;"></div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+    @push('css_legend')
+        <style>
+            .info.legend {
+                background: white;
+                padding: 6px 8px;
+                font-size: 14px;
+                line-height: 18px;
+                color: #555;
+                border-radius: 5px;
+                box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            }
+
+            .info.legend i {
+                width: 18px;
+                height: 18px;
+                float: left;
+                margin-right: 8px;
+                opacity: 0.7;
+                border: 1px solid #ddd;
+            }
+        </style>
+    @endpush
     @push('proses_pemetaan')
         <script>
             var map = L.map('map').setView([-7.670235012045887, 112.18156128524838], 8);
@@ -34,8 +63,6 @@
                 maxZoom: 18,
                 attribution: '© OpenStreetMap'
             }).addTo(map);
-
-            var geojsonData = {!! $geojson !!};
 
             function style(feature) {
                 let color;
@@ -61,16 +88,84 @@
                 };
             }
 
-            L.geoJSON(geojsonData, {
-                style: style,
-                onEachFeature: function(feature, layer) {
-                    layer.bindPopup(
-                        "<b>Kabupaten:</b> " + (feature.properties.NAME_2 || "N/A") +
-                        "<br><b>Kecamatan:</b> " + (feature.properties.NAME_3 || "N/A") +
-                        "<br><b>Cluster Level:</b> " + (feature.properties.cluster || "Tidak Ada Data")
-                    );
-                }
-            }).addTo(map);
+            // Custom Legend Control
+            var legend = L.control({
+                position: 'bottomright'
+            });
+
+            legend.onAdd = function(map) {
+                var div = L.DomUtil.create('div', 'info legend');
+
+                // Legend content
+                div.innerHTML += 'Keterangan Warna<br>';
+                div.innerHTML += '<i style="background: #00FF00FF"></i> Cluster 1 / Rendah<br>';
+                div.innerHTML += '<i style="background: #FFCC00FF"></i> Cluster 2 / Sedang<br>';
+                div.innerHTML += '<i style="background: #FF0000FF"></i> Cluster 3 / Tinggi<br>';
+                div.innerHTML += '<i style="background: #d9d9d9"></i> Belum Ada Data<br>';
+
+                return div;
+            };
+
+            // Add the legend to the map
+            legend.addTo(map);
+
+            function loadGeoJSON(geojsonData) {
+                L.geoJSON(geojsonData, {
+                    style: style,
+                    onEachFeature: function(feature, layer) {
+                        layer.bindPopup(
+                            `<b>Kabupaten:</b> ${feature.properties.NAME_2 || "N/A"}<br>
+                     <b>Kecamatan:</b> ${feature.properties.NAME_3 || "N/A"}<br>
+                     <b>Cluster Level:</b> ${feature.properties.cluster || "Tidak Ada Data"}`
+                        );
+                    }
+                }).addTo(map);
+            }
+
+            $(document).ready(function() {
+                const initialGeoJSON = {!! $geojson !!};
+                loadGeoJSON(initialGeoJSON);
+
+                $('#tahun').on('change', function() {
+                    const selectedYear = $(this).val();
+                    Swal.fire({
+                        title: 'Memproses...',
+                        text: 'Tunggu sebentar, sedang memuat data',
+                        icon: 'info',
+                        allowOutsideClick: false,
+                        showConfirmButton: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+                    $.ajax({
+                        url: "{{ route('map.fetch') }}",
+                        method: "GET",
+                        data: {
+                            year: selectedYear
+                        },
+                        success: function(response) {
+                            Swal.fire({
+                                title: 'Sukses',
+                                text: 'Sukses mendapatkan data pemetaan tahun ' +
+                                    selectedYear,
+                                icon: 'success',
+                            });
+                            map.eachLayer(function(layer) {
+                                if (!layer._url) {
+                                    map.removeLayer(layer);
+                                }
+                            });
+
+                            loadGeoJSON(response);
+
+                        },
+                        error: function(xhr, status, error) {
+                            console.error("AJAX error:", status, error);
+                        },
+                    });
+                });
+            });
         </script>
     @endpush
 @endsection

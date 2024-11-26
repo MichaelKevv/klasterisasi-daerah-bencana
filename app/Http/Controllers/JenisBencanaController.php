@@ -19,7 +19,7 @@ class JenisBencanaController extends Controller
      */
     public function index()
     {
-        $data = TbJenisBencana::all();
+        $data = TbJenisBencana::orderBy('nama_bencana', 'asc')->get();
         $title = 'Hapus Jenis Bencana';
         $text = "Apakah anda yakin untuk hapus?";
         confirmDelete($title, $text);
