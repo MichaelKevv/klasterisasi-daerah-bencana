@@ -22,7 +22,7 @@
                         <div class="form-group mb-2">
                             <label for="tahun">Pilih Tahun:</label>
                             <select id="tahun" class="form-select">
-                                <option value="">Semua Tahun</option>
+                                <option disabled selected>Pilih Tahun</option>
                                 @foreach ($tahunList as $tahun)
                                     <option value="{{ $tahun }}">{{ $tahun }}</option>
                                 @endforeach
@@ -123,8 +123,8 @@
             }
 
             $(document).ready(function() {
-                const initialGeoJSON = {!! $geojson !!};
-                loadGeoJSON(initialGeoJSON);
+                // const initialGeoJSON = {!! $geojson !!};
+                // loadGeoJSON(initialGeoJSON);
 
                 $('#tahun').on('change', function() {
                     const selectedYear = $(this).val();

@@ -33,7 +33,7 @@
                                 <div class="col-md-12">
                                     <div class="input-group input-group-static my-3">
                                         <label class="">Nama Kota/Kabupaten</label>
-                                        <select name="id_kotakab" id="id_kotakab" class="form-control">
+                                        <select name="id_kotakab" id="id_kotakab" class="form-select">
                                             <option selected disabled>Pilih Kota/Kab</option>
                                             @foreach ($kotakab as $kb)
                                                 <option value="{{ $kb->id }}">{{ $kb->nama_kotakab }}</option>
@@ -44,7 +44,7 @@
                                 <div class="col-md-12">
                                     <div class="input-group input-group-static my-3">
                                         <label class="">Nama Kecamatan</label>
-                                        <select name="id_kecamatan" id="id_kecamatan" class="form-control">
+                                        <select name="id_kecamatan" id="id_kecamatan" class="form-select">
                                             <option selected disabled>Pilih Kecamatan</option>
                                         </select>
                                     </div>
@@ -52,7 +52,7 @@
                                 <div class="col-md-12">
                                     <div class="input-group input-group-static my-3">
                                         <label class="">Nama Bencana</label>
-                                        <select name="id_jenisbencana" id="id_jenisbencana" class="form-control">
+                                        <select name="id_jenisbencana" id="id_jenisbencana" class="form-select">
                                             <option selected disabled>Pilih Bencana</option>
                                             @foreach ($jenis_bencana as $j)
                                                 <option value="{{ $j->id }}">{{ $j->nama_bencana }}</option>

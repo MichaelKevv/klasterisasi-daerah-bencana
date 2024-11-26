@@ -101,7 +101,7 @@
                     </div>
                     <div class="card-body">
                         <div class="chart-container">
-                            <canvas id="chartBencanaJenis" height="150"></canvas>
+                            <canvas id="chartBencanaJenis"></canvas>
                         </div>
                     </div>
                 </div>
@@ -115,7 +115,7 @@
                     </div>
                     <div class="card-body">
                         <div class="chart-container">
-                            <canvas id="chartBencanaTahun" height="150"></canvas>
+                            <canvas id="chartBencanaTahun" height="300"></canvas>
                         </div>
                     </div>
                 </div>
