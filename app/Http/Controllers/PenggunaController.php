@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\TbPengguna;
+use App\Models\TbUser;
 use App\Models\TbPetuga;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -20,7 +20,7 @@ class PenggunaController extends Controller
      */
     public function index()
     {
-        $data = TbPengguna::all();
+        $data = TbUser::all();
         $title = 'Hapus Pengguna';
         $text = "Apakah anda yakin untuk hapus?";
         confirmDelete($title, $text);
@@ -34,6 +34,7 @@ class PenggunaController extends Controller
      */
     public function create()
     {
+        return view('pengguna.create');
     }
 
     /**
@@ -44,6 +45,23 @@ class PenggunaController extends Controller
      */
     public function store(Request $request)
     {
+        DB::beginTransaction();
+
+        try {
+            $penggunaData = $request->only(['nama_user', 'email', 'role']);
+            $penggunaData['password'] = Hash::make($request->password);
+
+            TbUser::create($penggunaData);
+
+            Alert::success("Success", "Pengguna berhasil disimpan");
+
+            DB::commit();
+
+            return redirect("pengguna");
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat menyimpan data.')->withInput();
+        }
     }
 
     /**
@@ -63,9 +81,9 @@ class PenggunaController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function edit(TbPengguna $pengguna)
+    public function edit(TbUser $pengguna)
     {
-        return view('pengguna/edit', compact('pengguna'));
+        return view('pengguna.edit', compact('pengguna'));
     }
 
     /**
@@ -75,29 +93,15 @@ class PenggunaController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, TbPengguna $pengguna)
+    public function update(Request $request, TbUser $pengguna)
     {
-        $messages = [
-            'required' => 'Field :attribute wajib diisi.',
-            'username.unique' => 'Username telah dipakai.',
-            'email.unique' => 'Email telah dipakai.',
-            'password.min' => 'Password harus terdiri dari minimal :min karakter.',
-        ];
-        $validator = Validator::make($request->all(), [
-            'username' => 'required|string|unique:tb_pengguna,username,' . $pengguna->id_pengguna . ',id_pengguna',
-            'email' => 'required|email|unique:tb_pengguna,email,' . $pengguna->id_pengguna . ',id_pengguna',
-            'password' => 'nullable|string|min:6',
-        ], $messages);
-
-        if ($validator->fails()) {
-            return redirect()->back()->withErrors($validator)->withInput();
-        }
 
         DB::beginTransaction();
 
         try {
-            $pengguna->username = $request->username;
+            $pengguna->nama_user = $request->nama_user;
             $pengguna->email = $request->email;
+            $pengguna->role = $request->role;
             if ($request->filled('password')) {
                 $pengguna->password = Hash::make($request->password);
             }
@@ -105,7 +109,7 @@ class PenggunaController extends Controller
 
             DB::commit();
 
-            Alert::success("Success", "Data berhasil diperbarui");
+            Alert::success("Success", "Pengguna berhasil diupdate");
 
             return redirect("pengguna");
         } catch (\Exception $e) {
@@ -120,18 +124,11 @@ class PenggunaController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy(TbPengguna $pengguna)
+    public function destroy(TbUser $pengguna)
     {
         $pengguna->delete();
-        Alert::success("Success", "Data berhasil dihapus");
+        Alert::success("Success", "Pengguna berhasil dihapus");
 
         return redirect("pengguna");
-    }
-
-    public function export()
-    {
-        $pengguna = TbPengguna::all();
-        $pdf = Pdf::loadview('pengguna.export_pdf', ['data' => $pengguna]);
-        return $pdf->download('laporan-pengguna.pdf');
     }
 }

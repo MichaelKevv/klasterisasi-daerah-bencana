@@ -33,6 +33,7 @@ class TbUser extends Authenticatable
 	protected $fillable = [
 		'nama_user',
 		'email',
-		'password'
+		'password',
+        'role'
 	];
 }

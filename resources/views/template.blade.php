@@ -96,14 +96,16 @@
                         <span class="nav-link-text ms-1">Kecamatan</span>
                     </a>
                 </li>
-                {{-- <li class="nav-item">
-                    <a class="nav-link text-white" href="{{ url('kriteria') }}">
-                        <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
-                            <i class="material-icons opacity-10">location_city</i>
-                        </div>
-                        <span class="nav-link-text ms-1">Kriteria</span>
-                    </a>
-                </li> --}}
+                @if (session('userdata.role') == 'admin')
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="{{ url('pengguna') }}">
+                            <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
+                                <i class="material-icons opacity-10">people</i>
+                            </div>
+                            <span class="nav-link-text ms-1">Pengguna</span>
+                        </a>
+                    </li>
+                @endif
                 <li class="nav-item">
                     <a class="nav-link text-white" href="{{ url('jenis_bencana') }}">
                         <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
@@ -130,11 +132,13 @@
                     </a>
                     <div class="collapse" id="klasterisasi" style="">
                         <ul class="nav">
+                            @if (session('userdata.role') == 'admin')
                             <li class="nav-item">
                                 <a class="nav-link text-white" href="{{ url('klasterisasi/perhitungan') }}">
                                     <span class="sidenav-normal  ms-1  ps-1">Perhitungan Klasterisasi</span>
                                 </a>
                             </li>
+                            @endif
                             <li class="nav-item">
                                 <a class="nav-link text-white" href="{{ url('klasterisasi/hasil') }}">
                                     <span class="sidenav-normal  ms-1  ps-1">Hasil Klasterisasi</span>
@@ -179,7 +183,7 @@
                             <a href="javascript:;" class="nav-link text-body p-0" id="dropdownMenuButton"
                                 data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="fa fa-user me-sm-1"></i>
-                                <span class="d-sm-inline d-none">{{ session('userdata')->nama_user }}</span>
+                                <span class="d-sm-inline d-none">{{ session('userdata.nama_user') }}</span>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end px-2 me-sm-n4"
                                 aria-labelledby="dropdownMenuButton">

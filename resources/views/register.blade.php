@@ -7,7 +7,7 @@
     <link rel="apple-touch-icon" sizes="76x76" href="{{ asset('img/logo.png') }}">
     <link rel="icon" type="image/png" href="{{ asset('img/logo.png') }}">
     <title>
-        Klasterisasi Daerah Rawan Bencana | Login
+        Klasterisasi Daerah Rawan Bencana | Register
     </title>
     <!--     Fonts and icons     -->
     <link rel="stylesheet" type="text/css"
@@ -44,23 +44,26 @@
                         <div class="card z-index-0 fadeIn3 fadeInBottom">
                             <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
                                 <div class="bg-gradient-primary shadow-primary border-radius-lg py-3 pe-1">
-                                    <h4 class="text-white font-weight-bolder text-center mt-2 mb-0">Log In</h4>
+                                    <h4 class="text-white font-weight-bolder text-center mt-2 mb-0">Register</h4>
                                 </div>
                             </div>
                             <div class="card-body">
-                                <form role="form" action="{{ url('login') }}" method="post" class="text-start">
+                                <form role="form" action="{{ url('register') }}" method="post" class="text-start">
                                     @csrf
                                     <div class="input-group input-group-static my-3">
+                                        <label class="">Nama</label>
+                                        <input type="text" name="nama_user" class="form-control" required>
+                                    </div>
+                                    <div class="input-group input-group-static my-3">
                                         <label class="">Email</label>
-                                        <input type="email" name="email" class="form-control">
+                                        <input type="email" name="email" class="form-control" required>
                                     </div>
                                     <div class="input-group input-group-static mb-3">
                                         <label class="">Password</label>
-                                        <input type="password" name="password" class="form-control">
+                                        <input type="password" name="password" class="form-control" required>
                                     </div>
                                     <div class="text-center">
-                                        <button type="submit" class="btn bg-gradient-primary w-100 my-4 mb-2">Log In</button>
-                                        <span>Belum ada akun? <a href="{{ url('register') }}">Klik Disini</a> </span>
+                                        <button type="submit" class="btn bg-gradient-primary w-100 my-4 mb-2">Register</button>
                                     </div>
                                 </form>
                             </div>

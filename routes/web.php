@@ -3,21 +3,14 @@
 use App\Http\Controllers\ArtikelController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DataBencanaController;
-use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\JenisBencanaController;
 use App\Http\Controllers\KecamatanController;
-use App\Http\Controllers\KepsekController;
 use App\Http\Controllers\KlasterisasiController;
-use App\Http\Controllers\KlasterisasiTestController;
 use App\Http\Controllers\KotaKabController;
-use App\Http\Controllers\KriteriaController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\PemetaanController;
-use App\Http\Controllers\PengaduanController;
 use App\Http\Controllers\PenggunaController;
 use App\Http\Controllers\PerhitunganController;
-use App\Http\Controllers\PetugasController;
-use App\Http\Controllers\SiswaController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -30,18 +23,23 @@ use Illuminate\Support\Facades\Route;
 | contains the "web" middleware group. Now create something great!
 |
 */
-
-Route::get('/', [LoginController::class, 'showLoginForm'])->name('login')->middleware('guest');
-Route::get('login', [LoginController::class, 'showLoginForm'])->name('login')->middleware('guest');
-Route::post('login', [LoginController::class, 'login']);
+Route::middleware(['guest'])->group(function (){
+    Route::get('/', [LoginController::class, 'showLoginForm'])->name('login');
+    Route::get('login', [LoginController::class, 'showLoginForm'])->name('login');
+    Route::post('login', [LoginController::class, 'login']);
+    Route::get('register', [LoginController::class, 'showRegisterForm'])->name('register');
+    Route::post('register', [LoginController::class, 'register']);
+});
 Route::middleware(['auth'])->group(function () {
     Route::get('logout', [LoginController::class, 'logout'])->name('logout');
     Route::get('dashboard', [DashboardController::class, 'index']);
+
     Route::resource('kotakab', KotaKabController::class);
     Route::resource('kecamatan', KecamatanController::class);
-
+    Route::resource('pengguna', PenggunaController::class);
     Route::resource('jenis_bencana', JenisBencanaController::class);
     Route::resource('data_bencana', DataBencanaController::class);
+
     Route::get('data_bencana/{id_kecamatan}/{tahun}', [DataBencanaController::class, 'show']);
     Route::post('data_bencana/import', [DataBencanaController::class, 'import'])->name('data_bencana.import');
     Route::get('get-kecamatan/{id}', [DataBencanaController::class, 'getKecamatan']);
