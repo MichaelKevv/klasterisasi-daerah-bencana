@@ -52,7 +52,7 @@ class LoginController extends Controller
         try {
             $penggunaData = $request->only(['nama_user', 'email']);
             $penggunaData['password'] = Hash::make($request->password);
-            $penggunaData['role'] = 'user';
+            $penggunaData['role'] = 'admin';
 
             TbUser::create($penggunaData);
 

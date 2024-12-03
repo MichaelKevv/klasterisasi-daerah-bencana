@@ -96,7 +96,7 @@
                         <span class="nav-link-text ms-1">Kecamatan</span>
                     </a>
                 </li>
-                @if (session('userdata.role') == 'admin')
+                @if (session('userdata.role') == 'superadmin')
                     <li class="nav-item">
                         <a class="nav-link text-white" href="{{ url('pengguna') }}">
                             <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
@@ -132,7 +132,7 @@
                     </a>
                     <div class="collapse" id="klasterisasi" style="">
                         <ul class="nav">
-                            @if (session('userdata.role') == 'admin')
+                            @if (session('userdata.role') == 'superadmin')
                             <li class="nav-item">
                                 <a class="nav-link text-white" href="{{ url('klasterisasi/perhitungan') }}">
                                     <span class="sidenav-normal  ms-1  ps-1">Perhitungan Klasterisasi</span>

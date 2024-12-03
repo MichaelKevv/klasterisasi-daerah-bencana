@@ -47,8 +47,8 @@
                                         <label class="">Role</label>
                                         <select name="role" id="role" class="form-select">
                                             <option disabled selected>Pilih Role</option>
+                                            <option value="superadmin">Superadmin</option>
                                             <option value="admin">Admin</option>
-                                            <option value="admin">User</option>
                                         </select>
                                     </div>
                                 </div>

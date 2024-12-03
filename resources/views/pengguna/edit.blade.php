@@ -50,9 +50,9 @@
                                         <label class="">Role</label>
                                         <select name="role" id="role" class="form-select">
                                             <option disabled>Pilih Role</option>
-                                            <option {{ $pengguna->role == 'admin' ? 'selected' : '' }} value="admin">Admin
+                                            <option {{ $pengguna->role == 'superadmin' ? 'selected' : '' }} value="superadmin">Superadmin
                                             </option>
-                                            <option {{ $pengguna->role == 'user' ? 'selected' : '' }} value="admin">User
+                                            <option {{ $pengguna->role == 'admin' ? 'selected' : '' }} value="admin">Admin
                                             </option>
                                         </select>
                                     </div>

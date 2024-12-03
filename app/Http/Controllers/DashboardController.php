@@ -14,6 +14,10 @@ class DashboardController extends Controller
 {
     public function index()
     {
+        $tahunList = TbDataBencana::selectRaw('tahun')
+            ->distinct()
+            ->orderBy('tahun', 'asc')
+            ->pluck('tahun');
         $kotakab = TbKotakab::count();
         $kecamatan = TbKecamatan::count();
         $jenis_bencana = TbJenisbencana::count();
@@ -29,7 +33,7 @@ class DashboardController extends Controller
         foreach ($bencanaByJenis as $bencana) {
             $colors[] = $this->generateRandomColor();
         }
-        return view('dashboard', compact('colors', 'kotakab', 'kecamatan', 'data_bencana', 'jenis_bencana', 'bencanaByJenis', 'bencanaByTahun'));
+        return view('dashboard', compact('colors', 'kotakab', 'kecamatan', 'data_bencana', 'jenis_bencana', 'bencanaByJenis', 'bencanaByTahun', 'tahunList'));
     }
 
     private function generateRandomColor()

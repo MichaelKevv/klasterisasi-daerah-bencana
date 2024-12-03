@@ -39,11 +39,13 @@
                             </div>
                             <button type="button" id="proses-klasterisasi" class="btn btn-success d-none">Proses
                                 Klasterisasi</button>
-                            <a href="{{ url('klasterisasi/perhitungan') }}">
-                                <button type="button" id="perhitungan-klasterisasi"
-                                    class="btn btn-success d-none">Perhitungan
-                                    Klasterisasi</button>
-                            </a>
+                            @if (session('userdata.role') == 'superadmin')
+                                <a href="{{ url('klasterisasi/perhitungan') }}">
+                                    <button type="button" id="perhitungan-klasterisasi"
+                                        class="btn btn-success d-none">Perhitungan
+                                        Klasterisasi</button>
+                                </a>
+                            @endif
                         </form>
 
                         <div id="klasterisasi-result">

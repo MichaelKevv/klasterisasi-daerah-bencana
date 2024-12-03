@@ -113,11 +113,42 @@
                 L.geoJSON(geojsonData, {
                     style: style,
                     onEachFeature: function(feature, layer) {
-                        layer.bindPopup(
-                            `<b>Kabupaten:</b> ${feature.properties.NAME_2 || "N/A"}<br>
-                     <b>Kecamatan:</b> ${feature.properties.NAME_3 || "N/A"}<br>
-                     <b>Cluster Level:</b> ${feature.properties.cluster || "Tidak Ada Data"}`
-                        );
+                        layer.on('mouseover', function(e) {
+                            let clusterDescription;
+                            switch (feature.properties.cluster) {
+                                case 'C1':
+                                    clusterDescription = "Rendah";
+                                    break;
+                                case 'C2':
+                                    clusterDescription = "Sedang";
+                                    break;
+                                case 'C3':
+                                    clusterDescription = "Tinggi";
+                                    break;
+                                default:
+                                    clusterDescription = "Tidak Ada Data";
+                            }
+                            const popupContent = `
+                    <b>Kabupaten:</b> ${feature.properties.NAME_2 || "N/A"}<br>
+                    <b>Kecamatan:</b> ${feature.properties.NAME_3 || "N/A"}<br>
+                    <b>Cluster:</b> ${clusterDescription}
+                `;
+                            const popup = L.popup({
+                                    closeButton: false
+                                })
+                                .setLatLng(e.latlng)
+                                .setContent(popupContent)
+                                .openOn(map);
+                            layer.popup = popup;
+                        });
+
+                        layer.on('mouseout', function() {
+                            // Tutup popup saat mouse keluar dari layer
+                            if (layer.popup) {
+                                map.closePopup(layer.popup);
+                                layer.popup = null; // Hapus referensi popup
+                            }
+                        });
                     }
                 }).addTo(map);
             }
