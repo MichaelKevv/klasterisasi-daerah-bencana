@@ -144,10 +144,10 @@ class KlasterisasiController extends Controller
 
     private function kMeans($data, $k, $tahun)
     {
-        // Step 1: Inisialisasi centroid secara acak
+        // Step 1: Inisialisasi centroid
         $centroids = $this->initCentroids($data, $k);
 
-        // Step 2: Mulai iterasi sampai konvergen
+        // Step 2: Mulai iterasi sampai konvergen atau sama
         $iterations = 100; // Batas maksimum iterasi
         for ($i = 0; $i < $iterations; $i++) {
             $clusters = $this->assignClusters($data, $centroids);
@@ -170,7 +170,6 @@ class KlasterisasiController extends Controller
         return $clusters['clusters'];
     }
 
-    // Fungsi untuk inisialisasi centroid secara acak
     private function labelCentroids($centroids)
     {
         $labeledCentroids = [];
@@ -233,7 +232,7 @@ class KlasterisasiController extends Controller
         }
     }
 
-    // Fungsi untuk inisialisasi centroid secara acak
+    // Fungsi untuk inisialisasi centroid
     private function initCentroids($data)
     {
         // Sortir data berdasarkan total_frekuensi + total_kerusakan + total_korban
