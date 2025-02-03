@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\TbClustering;
 use App\Models\TbDataBencana;
+use App\Models\TbSilhouetteScore;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use RealRashid\SweetAlert\Facades\Alert;
@@ -97,7 +98,6 @@ class KlasterisasiController extends Controller
             ->orderBy('tb_kecamatan.nama_kecamatan')
             ->get();
 
-
         // Step 2: Format data untuk K-Means
         $data = [];
         foreach ($dataBencana as $item) {
@@ -165,6 +165,17 @@ class KlasterisasiController extends Controller
             $centroids = $newCentroids;
         }
         ksort($clusters['clusters']);
+
+        $averageSilhouetteScore = $this->calculateSilhouetteScore($data, $clusters['clusters'], $centroids);
+
+        $silhouetteScore = TbSilhouetteScore::where('tahun', '=', $tahun)->first();
+
+        if (!$silhouetteScore) {
+            DB::table('tb_silhouette_score')->insert([
+                'avg_silhouette_score' => $averageSilhouetteScore,
+                'tahun' => $tahun,
+            ]);
+        }
 
         // Pastikan cluster selalu berurutan dengan label C1, C2, C3
         return $clusters['clusters'];
@@ -242,7 +253,6 @@ class KlasterisasiController extends Controller
             return $sumA <=> $sumB; // Mengurutkan dari nilai terendah ke tertinggi
         });
 
-
         // Mengambil centroid awal berdasarkan urutan
         $centroids = [];
 
@@ -318,6 +328,178 @@ class KlasterisasiController extends Controller
         ];
         return $datas;
     }
+
+    private function calculateSilhouetteScor1e($data, $clusters, $centroids)
+    {
+        // Hitung jarak Euclidean antara dua titik
+        $calculateEuclideanDistance = function ($point1, $point2) {
+            return sqrt(pow($point1['total_frekuensi'] - $point2['total_frekuensi'], 2) +
+                pow($point1['total_kerusakan'] - $point2['total_kerusakan'], 2) +
+                pow($point1['total_korban'] - $point2['total_korban'], 2));
+        };
+
+        // Matriks jarak antar titik dalam dataset
+        $distanceMatrix = [];
+
+        // Menghitung jarak antara setiap pasangan titik
+        foreach ($data as $i => $point1) {
+            foreach ($data as $j => $point2) {
+                if (!isset($distanceMatrix[$i])) {
+                    $distanceMatrix[$i] = [];
+                }
+                $distanceMatrix[$i][$j] = $calculateEuclideanDistance($point1, $point2);
+            }
+        }
+
+        $silhouetteScores = [];
+
+        // Untuk setiap titik dalam dataset
+        foreach ($data as $i => $point) {
+            // a(i): Rata-rata jarak ke titik dalam cluster yang sama
+            $clusterId = $this->getClosestCluster($point, $centroids);
+            $sameClusterPoints = $clusters[$clusterId];
+
+            $a = 0;
+            $numSameClusterPoints = count($sameClusterPoints);
+            for ($j = 0; $j < $numSameClusterPoints; $j++) {
+                // Menghitung rata-rata jarak ke titik lain dalam cluster yang sama
+                if ($sameClusterPoints[$j] !== $point) {
+                    $samePointIndex = array_search($sameClusterPoints[$j], $data);
+                    $a += $distanceMatrix[$i][$samePointIndex];
+                }
+            }
+            $a /= ($numSameClusterPoints - 1); // Rata-rata jarak ke titik lain dalam cluster yang sama
+
+            // b(i): Rata-rata jarak ke titik dalam cluster terdekat
+            $b = PHP_INT_MAX;
+            foreach ($centroids as $index => $centroid) {
+                if ($index !== $clusterId) {
+                    $otherClusterPoints = $clusters[$index];
+                    $bClusterDistance = 0;
+                    $numOtherClusterPoints = count($otherClusterPoints);
+                    foreach ($otherClusterPoints as $otherPoint) {
+                        $otherPointIndex = array_search($otherPoint, $data);
+                        $bClusterDistance += $distanceMatrix[$i][$otherPointIndex];
+                    }
+                    $bClusterDistance /= $numOtherClusterPoints; // Rata-rata jarak ke titik di cluster lain
+
+                    // Tentukan nilai b(i) yang paling kecil (cluster terdekat)
+                    if ($bClusterDistance < $b) {
+                        $b = $bClusterDistance;
+                    }
+                }
+            }
+
+            // Silhouette Score untuk titik ini
+            $silhouetteScore = ($b - $a) / max($a, $b);
+            $silhouetteScores[] = $silhouetteScore;
+        }
+
+        // Rata-rata Silhouette Score untuk seluruh data
+        $averageSilhouetteScore = array_sum($silhouetteScores) / count($silhouetteScores);
+
+        return $averageSilhouetteScore;
+    }
+
+    private function calculateSilhouetteScore($data, $clusters, $centroids)
+    {
+        // Hitung jarak Euclidean antara dua titik
+        $calculateEuclideanDistance = function ($point1, $point2) {
+            return sqrt(pow($point1['total_frekuensi'] - $point2['total_frekuensi'], 2) +
+                pow($point1['total_kerusakan'] - $point2['total_kerusakan'], 2) +
+                pow($point1['total_korban'] - $point2['total_korban'], 2));
+        };
+
+        $silhouetteScores = [];
+        $logDetails = []; // Array untuk menyimpan log detail
+
+        foreach ($data as $index => $point) {
+            // a(i): Rata-rata jarak ke titik dalam cluster yang sama
+            $clusterId = $this->getClosestCluster($point, $centroids); // Tentukan cluster tempat titik berada
+            $sameClusterPoints = $clusters[$clusterId];
+
+            // Mulai log untuk titik ini
+            $logDetails[$index] = [
+                'point' => $point,
+                'clusterId' => $clusterId,
+                'a' => 0,
+                'b' => PHP_INT_MAX,
+                'silhouetteScore' => null,
+                'intraClusterDistances' => [],
+                'interClusterDistances' => [],
+            ];
+
+            // Hitung jarak rata-rata ke titik dalam cluster yang sama
+            $a = 0;
+            foreach ($sameClusterPoints as $sameIndex => $samePoint) {
+                if ($samePoint !== $point) {
+                    $distance = $calculateEuclideanDistance($point, $samePoint);
+                    // Simpan jarak intra-cluster
+                    $logDetails[$index]['intraClusterDistances'][$sameIndex] = $distance;
+                    $a += $distance;
+                }
+            }
+            $a /= count($sameClusterPoints) - 1; // Rata-rata jarak dengan titik lain dalam cluster yang sama
+            $logDetails[$index]['a'] = $a; // Simpan nilai a(i)
+
+            // b(i): Rata-rata jarak ke titik dalam cluster terdekat
+            $b = PHP_INT_MAX;
+            foreach ($centroids as $centroidIndex => $centroid) {
+                if ($centroidIndex !== $clusterId) {
+                    $otherClusterPoints = $clusters[$centroidIndex];
+                    $bClusterDistance = 0;
+                    foreach ($otherClusterPoints as $otherIndex => $otherPoint) {
+                        $distance = $calculateEuclideanDistance($point, $otherPoint);
+                        // Simpan jarak inter-cluster
+                        $logDetails[$index]['interClusterDistances'][$otherIndex] = $distance;
+                        $bClusterDistance += $distance;
+                    }
+                    $bClusterDistance /= count($otherClusterPoints); // Rata-rata jarak ke titik di cluster lain
+
+                    // Tentukan nilai b(i) yang paling kecil (cluster terdekat)
+                    if ($bClusterDistance < $b) {
+                        $b = $bClusterDistance;
+                    }
+                }
+            }
+            $logDetails[$index]['b'] = $b; // Simpan nilai b(i)
+
+            // Silhouette Score untuk titik ini
+            $silhouetteScore = ($b - $a) / max($a, $b);
+            $logDetails[$index]['silhouetteScore'] = $silhouetteScore; // Simpan nilai silhouette score
+
+            $silhouetteScores[] = $silhouetteScore;
+        }
+
+        // Rata-rata Silhouette Score untuk seluruh data
+        $averageSilhouetteScore = array_sum($silhouetteScores) / count($silhouetteScores);
+        $logDetails['averageSilhouetteScore'] = $averageSilhouetteScore; // Simpan rata-rata silhouette score
+
+        return $averageSilhouetteScore;
+    }
+
+
+
+
+    private function getClosestCluster($point, $centroids)
+    {
+        $minDistance = PHP_INT_MAX;
+        $closestClusterId = null;
+
+        foreach ($centroids as $index => $centroid) {
+            $distance = sqrt(pow($point['total_frekuensi'] - $centroid['total_frekuensi'], 2) +
+                pow($point['total_kerusakan'] - $centroid['total_kerusakan'], 2) +
+                pow($point['total_korban'] - $centroid['total_korban'], 2));
+
+            if ($distance < $minDistance) {
+                $minDistance = $distance;
+                $closestClusterId = $index;
+            }
+        }
+
+        return $closestClusterId;
+    }
+
 
     private function updateCentroids($data, $clusters, $k)
     {
